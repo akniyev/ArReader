@@ -1,6 +1,6 @@
 import sys
 
-from PyQt5.QtCore import QRect, QTimer
+from PyQt5.QtCore import QRect, QTimer, QAbstractTableModel
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import *
 import requests
@@ -23,7 +23,9 @@ class TranslationCsv:
 class TranslatorWindow(QWidget):
     def __init__(self):
         super().__init__()
+        self.columnlayout = QHBoxLayout()
         self.vbox = QVBoxLayout()
+        self.tableview = QTableWidget()
         self.textView = QLineEdit("كلام")
         self.tag_text_view = QLineEdit("ar_")
         self.btn_translate = QPushButton("Translate!")
@@ -43,7 +45,10 @@ class TranslatorWindow(QWidget):
         self.vbox.addWidget(self.btn_export)
         self.vbox.addWidget(self.tag_text_view)
 
-        self.setLayout(self.vbox)
+        self.columnlayout.addLayout(self.vbox)
+        self.columnlayout.addWidget(self.tableview)
+
+        self.setLayout(self.columnlayout)
         self.btn_translate.pressed.connect(self.translate_action)
 
         # QApplication.clipboard().changed.connect(self.clipboard_changed)
@@ -53,6 +58,25 @@ class TranslatorWindow(QWidget):
         self.textView.setText(self.current_clipboard)
         self.timer.timeout.connect(self.timeout)
         self.btn_export.pressed.connect(self.export_csv)
+
+    def display_added_words(self):
+        self.tableview.setRowCount(len(self.translations_to_export))
+        self.tableview.setColumnCount(3)
+        self.tableview.setColumnWidth(2, 20)
+
+        for i in range(len(self.translations_to_export)):
+            self.tableview.setCellWidget(i, 0, QLabel(self.translations_to_export[i].form))
+            self.tableview.setCellWidget(i, 1, QLabel(self.translations_to_export[i].translation))
+            btn = QPushButton("x")
+            btn.monkey = i
+            btn.pressed.connect(self.delete_word_from_list)
+
+            self.tableview.setCellWidget(i, 2, btn)
+
+    def delete_word_from_list(self):
+        id: int = self.sender().monkey
+        del self.translations_to_export[id]
+        self.display_added_words()
 
     def timeout(self):
         txt = QApplication.clipboard().text()
@@ -65,7 +89,7 @@ class TranslatorWindow(QWidget):
             self.translate_action()
 
         g = self.geometry()
-        self.setGeometry(g.x(), g.y(), 500, 10)
+        self.setGeometry(g.x(), g.y(),  1400, 10)
 
     def export_csv(self):
         filename = QFileDialog.getSaveFileName()[0]
@@ -98,6 +122,7 @@ class TranslatorWindow(QWidget):
 
         csv_item = TranslationCsv(form, variants)
         self.translations_to_export.append(csv_item)
+        self.display_added_words()
 
     def translate_action(self):
         for i in reversed(range(tw.vbox_button.count())):
