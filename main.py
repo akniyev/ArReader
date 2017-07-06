@@ -49,13 +49,16 @@ class TranslatorWindow(QWidget):
         # QApplication.clipboard().changed.connect(self.clipboard_changed)
         self.timer.setInterval(200)
         self.timer.start()
-        self.current_clipboard = QApplication.clipboard().text()
+        self.current_clipboard = ""
         self.textView.setText(self.current_clipboard)
         self.timer.timeout.connect(self.timeout)
         self.btn_export.pressed.connect(self.export_csv)
 
     def timeout(self):
         txt = QApplication.clipboard().text()
+        if len(txt.split(' ')) != 1:
+            return
+
         if txt != self.current_clipboard:
             self.current_clipboard = txt
             self.textView.setText(txt)
